@@ -12,7 +12,6 @@ services:
     volumes:
       - ./:/workspace
       - agentainer-home:/home/dev
-      - /tmp
     tmpfs:
       - /tmp:size=512M
       - /run:size=64M
@@ -69,7 +68,6 @@ services:
       - ./:/workspace
       - agentainer-home:/home/dev
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp
 
 volumes:
   agentainer-home:

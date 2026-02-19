@@ -61,7 +61,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ddgr \
 RUN ln -sf /usr/bin/fdfind /usr/local/bin/fd
 
 # ── Python tooling: whisper + playwright ───────────────────────────
-RUN python3 -m pip install --break-system-packages --upgrade pip setuptools wheel \
+RUN python3 -m pip install --break-system-packages --upgrade setuptools wheel \
  && python3 -m pip install --break-system-packages \
     black ruff mypy pytest pytest-cov \
     ipython rich httpx requests \
