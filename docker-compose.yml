@@ -1,0 +1,75 @@
+services:
+  agentainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: agentainer:latest
+    container_name: agentainer
+    working_dir: /workspace
+
+    read_only: true
+
+    volumes:
+      - ./:/workspace
+      - agentainer-home:/home/dev
+      - /tmp
+    tmpfs:
+      - /tmp:size=512M
+      - /run:size=64M
+      - /var/run/sshd:size=1M
+
+    environment:
+      - TZ=America/Chicago
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - TS_AUTHKEY=${TS_AUTHKEY:-}
+      - O365_EMAIL=${O365_EMAIL:-}
+      - O365_PASSWORD=${O365_PASSWORD:-}
+      - HIMALAYA_SENDER_NAME=${HIMALAYA_SENDER_NAME:-}
+      - HIMALAYA_SIGNATURE=${HIMALAYA_SIGNATURE:-}
+      - HIMALAYA_PASSWORD_CMD=${HIMALAYA_PASSWORD_CMD:-}
+
+    ports:
+      - "2222:22"
+
+    tty: true
+    stdin_open: true
+    init: true
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "/opt/scripts/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    restart: unless-stopped
+
+  # --- Profile: docker host access (opt-in) ---
+  # Usage: docker compose --profile dockerhost up -d
+  agentainer-dockerhost:
+    extends:
+      service: agentainer
+    container_name: agentainer-dh
+    profiles:
+      - dockerhost
+    volumes:
+      - ./:/workspace
+      - agentainer-home:/home/dev
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp
+
+volumes:
+  agentainer-home:

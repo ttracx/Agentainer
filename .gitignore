@@ -1,0 +1,23 @@
+# Secrets
+.env
+.env.local
+.env.production
+.secrets.baseline
+
+# OS
+.DS_Store
+
+# Python
+**/__pycache__/
+**/.pytest_cache/
+*.pyc
+
+# Docker volumes
+agentainer-home/
+
+# Agentainer run artifacts (keep structure, ignore outputs)
+.agentainer/runs/*/
+.agentainer/downloads/*
+.agentainer/screenshots/*
+.agentainer/transcripts/*
+!.agentainer/**/.gitkeep
