@@ -174,6 +174,12 @@ See `tools/imsg-bridge/README.md` for full setup.
   # or
   docker compose --profile dockerhost up -d
   ```
+- **Tailscale device not mounted** by default. Use the `tailscale` profile to opt in:
+  ```bash
+  make tailscale
+  # or
+  docker compose --profile tailscale up -d
+  ```
 - **tmpfs** mounts for `/tmp` and `/run` (not persisted)
 - SSH: password authentication disabled, root login disabled
 

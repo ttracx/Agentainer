@@ -16,6 +16,7 @@ services:
       - /tmp:size=512M
       - /run:size=64M
       - /var/run/sshd:size=1M
+      - /var/lib/tailscale:size=64M
 
     environment:
       - TZ=America/Chicago
@@ -43,10 +44,6 @@ services:
       - SETUID
       - SETGID
       - DAC_OVERRIDE
-      - NET_ADMIN
-      - NET_RAW
-    devices:
-      - /dev/net/tun:/dev/net/tun
 
     healthcheck:
       test: ["CMD", "bash", "-lc", "/opt/scripts/healthcheck.sh"]
@@ -136,6 +133,20 @@ services:
       timeout: 3s
       retries: 5
     restart: unless-stopped
+
+  # --- Profile: tailscale (opt-in) ---
+  # Usage: docker compose --profile tailscale up -d
+  agentainer-tailscale:
+    extends:
+      service: agentainer
+    container_name: agentainer-ts
+    profiles:
+      - tailscale
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
 
 volumes:
   agentainer-home:

@@ -153,6 +153,7 @@ services:
       - /tmp:size=512M
       - /run:size=64M
       - /var/run/sshd:size=1M
+      - /var/lib/tailscale:size=64M
     environment:
       - TZ=America/Chicago
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -176,10 +177,6 @@ services:
       - SETUID
       - SETGID
       - DAC_OVERRIDE
-      - NET_ADMIN
-      - NET_RAW
-    devices:
-      - /dev/net/tun:/dev/net/tun
     healthcheck:
       test: ["CMD", "bash", "-lc", "/opt/scripts/healthcheck.sh"]
       interval: 30s
@@ -198,6 +195,18 @@ services:
       - agentainer-home:/home/dev
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp
+
+  agentainer-tailscale:
+    extends:
+      service: agentainer
+    container_name: agentainer-ts
+    profiles:
+      - tailscale
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
 
 volumes:
   agentainer-home:

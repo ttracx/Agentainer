@@ -70,17 +70,30 @@ fi
 
 # ── Step 4: Save run metadata ─────────────────────────────────────
 echo "[4/4] Saving run metadata..."
-cat > "$RUN_DIR/metadata.json" <<EOF
-{
-  "task": $(echo "$TASK" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))'),
-  "timestamp": "$TIMESTAMP",
-  "run_dir": "$RUN_DIR",
-  "url_detected": "${URL:-null}",
-  "search_results": "search_results.json",
-  "fetched_page": "fetched_page.md"
+TASK="$TASK" TIMESTAMP="$TIMESTAMP" RUN_DIR="$RUN_DIR" URL="${URL:-}" \
+  python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+task = os.environ["TASK"]
+timestamp = os.environ["TIMESTAMP"]
+run_dir = os.environ["RUN_DIR"]
+url = os.environ.get("URL") or None
+
+data = {
+    "task": task,
+    "timestamp": timestamp,
+    "run_dir": run_dir,
+    "url_detected": url,
+    "search_results": "search_results.json",
+    "fetched_page": "fetched_page.md",
 }
-EOF
-echo "  -> $RUN_DIR/metadata.json"
+
+path = Path(run_dir) / "metadata.json"
+path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+print(f"  -> {path}")
+PY
 
 echo ""
 echo "=== Run complete ==="

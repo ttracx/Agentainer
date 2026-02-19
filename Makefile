@@ -1,26 +1,33 @@
 .PHONY: up down shell rebuild logs himalaya playwright whisper start-services \
-       test run fetch dockerhost install-hooks \
+       test run fetch dockerhost tailscale install-hooks \
        memory-up memory-down memory-logs memory-health memory-test
+
+# Prefer `docker compose` (plugin) but fall back to standalone `docker-compose`.
+DC := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 
 # ── Core lifecycle ─────────────────────────────────────────────────
 up:
-	docker compose up -d --build
+	$(DC) up -d --build
 
 down:
-	docker compose down
+	$(DC) down
 
 rebuild:
-	docker compose build --no-cache
+	$(DC) build --no-cache
 
 logs:
-	docker compose logs -f
+	$(DC) logs -f
 
 shell:
 	docker exec -it agentainer zsh
 
 # ── Docker host access (opt-in profile) ────────────────────────────
 dockerhost:
-	docker compose --profile dockerhost up -d --build
+	$(DC) --profile dockerhost up -d --build
+
+# ── Tailscale (opt-in profile) ─────────────────────────────────────
+tailscale:
+	$(DC) --profile tailscale up -d --build
 
 # ── Services inside container ──────────────────────────────────────
 start-services:
@@ -49,23 +56,23 @@ whisper:
 
 # ── Testing ────────────────────────────────────────────────────────
 test:
-	docker exec -it agentainer bash -lc "cd /workspace && pytest tests/ -v --tb=short"
+	docker exec agentainer bash -lc "cd /workspace && pytest tests/ -v --tb=short"
 
 # ── MCP Memory Server (opt-in profile) ────────────────────────────
 memory-up:
-	docker compose --profile memory up -d --build
+	$(DC) --profile memory up -d --build
 
 memory-down:
-	docker compose --profile memory down
+	$(DC) --profile memory down
 
 memory-logs:
-	docker compose --profile memory logs -f mcp-memory
+	$(DC) --profile memory logs -f mcp-memory
 
 memory-health:
 	@curl -sf http://localhost:7411/health | python3 -m json.tool || echo "ERROR: mcp-memory not reachable"
 
 memory-test:
-	cd services/mcp-memory && docker compose up -d postgres redis && \
+	cd services/mcp-memory && $(DC) up -d postgres redis && \
 	sleep 3 && \
 	pip install -q -r requirements-test.txt && \
 	pytest tests/ -v --tb=short

@@ -7,6 +7,8 @@ Or:       make test
 import shutil
 import subprocess
 import sys
+import json
+import re
 
 
 def test_git_available():
@@ -108,3 +110,28 @@ def test_agentainer_run_script_exists():
     if not script.exists():
         script = Path(__file__).parent.parent / "scripts" / "agentainer-run.sh"
     assert script.exists(), "agentainer-run.sh not found"
+
+
+def test_agentainer_run_writes_valid_metadata_json():
+    """Run agentainer-run and verify metadata.json is valid and typed correctly."""
+    result = subprocess.run(
+        ["bash", "/opt/scripts/agentainer-run.sh", "no-url-task"],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, f"agentainer-run failed: {result.stderr}"
+
+    # Parse run directory from stdout: `Run  : /workspace/.agentainer/runs/<timestamp>`
+    match = re.search(r"^Run\\s+:\\s+(?P<dir>/workspace/\\.agentainer/runs/\\S+)$", result.stdout, re.MULTILINE)
+    assert match, f"Could not find run dir in output. stdout:\n{result.stdout}"
+
+    run_dir = match.group("dir")
+    metadata_path = f"{run_dir}/metadata.json"
+
+    with open(metadata_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    assert data["task"] == "no-url-task"
+    assert data["run_dir"] == run_dir
+    assert data["url_detected"] is None
