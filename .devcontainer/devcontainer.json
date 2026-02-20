@@ -10,6 +10,12 @@
     "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
   ],
   "postCreateCommand": "bash -lc '/opt/scripts/post-create.sh'",
+  "forwardPorts": [7411, 5433, 6380],
+  "portsAttributes": {
+    "7411": { "label": "MCP Memory Server", "onAutoForward": "silent" },
+    "5433": { "label": "MCP Memory Postgres", "onAutoForward": "silent" },
+    "6380": { "label": "MCP Memory Redis", "onAutoForward": "silent" }
+  },
   "customizations": {
     "vscode": {
       "settings": {
@@ -24,6 +30,7 @@
     }
   },
   "features": {
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   }
 }

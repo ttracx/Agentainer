@@ -69,5 +69,74 @@ services:
       - agentainer-home:/home/dev
       - /var/run/docker.sock:/var/run/docker.sock
 
+  # --- Profile: MCP Memory Server (opt-in) ---
+  # Usage: docker compose --profile memory up -d
+  # Standalone: docker compose -f services/mcp-memory/docker-compose.yml up -d
+  mcp-memory:
+    build:
+      context: ./services/mcp-memory
+      dockerfile: Dockerfile
+    container_name: mcp-memory
+    profiles:
+      - memory
+    environment:
+      - PG_DSN=postgresql://memuser:mempass@mcp-memory-postgres:5432/memorydb
+      - REDIS_URL=redis://mcp-memory-redis:6379/0
+      - EMBED_DIM=1536
+      - EMBED_PROVIDER=${MCP_EMBED_PROVIDER:-stub}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - BLOB_BUCKET=bellie-blobnlie
+      - LOG_LEVEL=${MCP_LOG_LEVEL:-info}
+      - MIGRATIONS_DIR=/app/migrations
+    depends_on:
+      mcp-memory-postgres:
+        condition: service_healthy
+      mcp-memory-redis:
+        condition: service_healthy
+    ports:
+      - "7411:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; r=httpx.get('http://localhost:8000/health'); r.raise_for_status()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  mcp-memory-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mcp-memory-postgres
+    profiles:
+      - memory
+    environment:
+      POSTGRES_DB: memorydb
+      POSTGRES_USER: memuser
+      POSTGRES_PASSWORD: ${MCP_PG_PASSWORD:-mempass}
+    volumes:
+      - mcp-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memuser -d memorydb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  mcp-memory-redis:
+    image: redis:7-alpine
+    container_name: mcp-memory-redis
+    profiles:
+      - memory
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   agentainer-home:
+  mcp-pgdata:
