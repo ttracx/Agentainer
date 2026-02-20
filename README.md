@@ -2,6 +2,9 @@
 
 Terminal-first, reusable coding agent development container. Deploy on **GitHub Codespaces**, **Render**, or **locally with Docker**.
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/ttracx/Agentainer?quickstart=1)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ttracx/Agentainer)
+
 ## What's inside
 
 | Tool | Purpose |
@@ -30,27 +33,33 @@ make up
 make shell
 ```
 
-### One-liner bootstrap (new machine)
+### One-liner install
 
 ```bash
-curl -fsSL <your-raw-url>/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ttracx/Agentainer/main/bootstrap.sh | bash
 cd Agentainer && cp .env.example .env && make up && make shell
 ```
 
+This downloads and runs the bootstrap script which creates the full Agentainer directory structure, writes all configuration files, and initializes a git repo. After that, just configure `.env` with your API keys and start the container.
+
 ### GitHub Codespaces
 
-The repo includes `.devcontainer/devcontainer.json` that builds from the local Dockerfile. Open the repo in Codespaces and it works out of the box. The `postCreateCommand` runs diagnostics and configures tools automatically.
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/ttracx/Agentainer?quickstart=1)
+
+The repo includes `.devcontainer/devcontainer.json` that builds from the local Dockerfile. Click the button above or open the repo in Codespaces and it works out of the box. The `postCreateCommand` runs diagnostics and configures tools automatically.
 
 To use the prebuilt GHCR image instead, update `devcontainer.json`:
 ```json
 {
-  "image": "ghcr.io/<owner>/<repo>/agentainer:latest"
+  "image": "ghcr.io/ttracx/Agentainer/agentainer:latest"
 }
 ```
 
 ### Render
 
-Use the Dockerfile directly as a Render Docker service. Set environment variables in the Render dashboard.
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ttracx/Agentainer)
+
+Click the button above to deploy directly to Render. The included `render.yaml` blueprint configures the Docker service automatically. Set your API keys and environment variables in the Render dashboard after deployment.
 
 ## Agent runner
 

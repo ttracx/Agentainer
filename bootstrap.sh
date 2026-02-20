@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-paste bootstrap to create the full Agentainer repo locally.
 # Usage:
-#   curl -fsSL <your-raw-url>/bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/ttracx/Agentainer/main/bootstrap.sh | bash
 # or
 #   bash bootstrap.sh
 set -euo pipefail

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: agentainer
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: TS_AUTHKEY
+        sync: false
+      - key: O365_EMAIL
+        sync: false
+      - key: O365_PASSWORD
+        sync: false
+      - key: HIMALAYA_SENDER_NAME
+        sync: false
+      - key: HIMALAYA_SIGNATURE
+        sync: false
+      - key: HIMALAYA_PASSWORD_CMD
+        sync: false
+      - key: TZ
+        value: America/Chicago
