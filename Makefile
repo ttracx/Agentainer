@@ -1,5 +1,6 @@
 .PHONY: up down shell rebuild logs himalaya playwright whisper start-services \
-       test run fetch dockerhost install-hooks
+       test run fetch dockerhost install-hooks \
+       memory-up memory-down memory-logs memory-health memory-test
 
 # ── Core lifecycle ─────────────────────────────────────────────────
 up:
@@ -49,6 +50,25 @@ whisper:
 # ── Testing ────────────────────────────────────────────────────────
 test:
 	docker exec -it agentainer bash -lc "cd /workspace && pytest tests/ -v --tb=short"
+
+# ── MCP Memory Server (opt-in profile) ────────────────────────────
+memory-up:
+	docker compose --profile memory up -d --build
+
+memory-down:
+	docker compose --profile memory down
+
+memory-logs:
+	docker compose --profile memory logs -f mcp-memory
+
+memory-health:
+	@curl -sf http://localhost:7411/health | python3 -m json.tool || echo "ERROR: mcp-memory not reachable"
+
+memory-test:
+	cd services/mcp-memory && docker compose up -d postgres redis && \
+	sleep 3 && \
+	pip install -q -r requirements-test.txt && \
+	pytest tests/ -v --tb=short
 
 # ── Secrets hygiene ────────────────────────────────────────────────
 install-hooks:

@@ -1,0 +1,64 @@
+# MCP Memory Server — Local development stack
+# Usage: docker compose -f services/mcp-memory/docker-compose.yml up -d
+
+services:
+  mcp-memory:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-memory
+    environment:
+      - PG_DSN=postgresql://memuser:mempass@postgres:5432/memorydb
+      - REDIS_URL=redis://redis:6379/0
+      - EMBED_DIM=1536
+      - EMBED_PROVIDER=stub
+      - BLOB_BUCKET=bellie-blobnlie
+      - LOG_LEVEL=info
+      - MIGRATIONS_DIR=/app/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "7411:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; r=httpx.get('http://localhost:8000/health'); r.raise_for_status()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mcp-memory-postgres
+    environment:
+      POSTGRES_DB: memorydb
+      POSTGRES_USER: memuser
+      POSTGRES_PASSWORD: mempass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memuser -d memorydb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: mcp-memory-redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:

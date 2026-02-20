@@ -1,11 +1,13 @@
-# Builds and publishes the Agentainer devcontainer image for GitHub Codespaces.
+# Builds and publishes Agentainer images for GitHub Codespaces.
 # Requires repo secrets:
 #   - GHCR_PAT (PAT with packages:write, read + repo scope)
 #     OR use GITHUB_TOKEN with proper permissions in the same org.
 #
-# Output image:
+# Output images:
 #   ghcr.io/<owner>/<repo>/agentainer:latest
 #   ghcr.io/<owner>/<repo>/agentainer:<sha>
+#   ghcr.io/<owner>/<repo>/mcp-memory:latest
+#   ghcr.io/<owner>/<repo>/mcp-memory:<sha>
 
 name: Build Agentainer Codespaces Image
 
@@ -42,15 +44,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT || github.token }}
 
-      - name: Compute image name
+      - name: Compute image names
         id: meta
         run: |
           set -euo pipefail
           OWNER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
           REPO="$(echo '${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')"
-          echo "image=ghcr.io/${OWNER}/${REPO}/agentainer" >> "$GITHUB_OUTPUT"
+          echo "agentainer_image=ghcr.io/${OWNER}/${REPO}/agentainer" >> "$GITHUB_OUTPUT"
+          echo "mcp_memory_image=ghcr.io/${OWNER}/${REPO}/mcp-memory" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push (multi-arch)
+      - name: Build and push Agentainer (multi-arch)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -58,7 +61,20 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ steps.meta.outputs.image }}:latest
-            ${{ steps.meta.outputs.image }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ steps.meta.outputs.agentainer_image }}:latest
+            ${{ steps.meta.outputs.agentainer_image }}:${{ github.sha }}
+          cache-from: type=gha,scope=agentainer
+          cache-to: type=gha,mode=max,scope=agentainer
+
+      - name: Build and push MCP Memory Server (multi-arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/mcp-memory
+          file: ./services/mcp-memory/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ steps.meta.outputs.mcp_memory_image }}:latest
+            ${{ steps.meta.outputs.mcp_memory_image }}:${{ github.sha }}
+          cache-from: type=gha,scope=mcp-memory
+          cache-to: type=gha,mode=max,scope=mcp-memory

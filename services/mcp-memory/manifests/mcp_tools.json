@@ -1,0 +1,158 @@
+{
+  "name": "mcp-memory",
+  "version": "1.0.0",
+  "description": "Shared Vector Memory + Knowledge Context server for OpenClaw Gateway and Nodes",
+  "base_url": "http://mcp-memory:8000",
+  "tools": [
+    {
+      "name": "memory.write",
+      "description": "Persist a memory entry (chat_turn, task_outcome, decision, runbook, doc_chunk) with vector embedding. Idempotent via content_hash dedupe.",
+      "endpoint": "/tools/memory.write",
+      "method": "POST",
+      "input_schema": {
+        "type": "object",
+        "required": ["tenant_id", "scope", "kind", "content"],
+        "properties": {
+          "tenant_id": { "type": "string", "description": "Tenant identifier" },
+          "scope": {
+            "type": "object",
+            "description": "Hierarchical scope for memory isolation",
+            "properties": {
+              "channel_id": { "type": "string" },
+              "conversation_id": { "type": "string" },
+              "project_id": { "type": "string" },
+              "task_id": { "type": "string" }
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["chat_turn", "task_outcome", "decision", "runbook", "doc_chunk", "summary"],
+            "description": "Type of memory entry"
+          },
+          "title": { "type": "string", "description": "Short title for the entry" },
+          "content": { "type": "string", "description": "Full content to persist" },
+          "tags": { "type": "array", "items": { "type": "string" }, "description": "Classification tags" },
+          "source": { "type": "string", "enum": ["gateway", "node", "import", "system"] },
+          "author_agent_id": { "type": "string", "description": "Agent that produced this entry" },
+          "tool_name": { "type": "string", "description": "Tool used (e.g., browser_use)" }
+        }
+      }
+    },
+    {
+      "name": "memory.search",
+      "description": "Hybrid retrieval: vector similarity + keyword (trigram) + metadata filters. Returns ranked results scoped to tenant+scope.",
+      "endpoint": "/tools/memory.search",
+      "method": "POST",
+      "input_schema": {
+        "type": "object",
+        "required": ["tenant_id", "scope_filter", "query"],
+        "properties": {
+          "tenant_id": { "type": "string" },
+          "scope_filter": {
+            "type": "object",
+            "properties": {
+              "channel_id": { "type": "string" },
+              "conversation_id": { "type": "string" },
+              "project_id": { "type": "string" },
+              "task_id": { "type": "string" }
+            }
+          },
+          "query": { "type": "string", "description": "Search query (used for vector + keyword matching)" },
+          "top_k": { "type": "integer", "default": 10, "minimum": 1, "maximum": 100 },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "kinds": { "type": "array", "items": { "type": "string" } },
+          "time_range_start": { "type": "string", "format": "date-time" },
+          "time_range_end": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    {
+      "name": "memory.get",
+      "description": "Fetch full memory entry with attachments and linked items.",
+      "endpoint": "/tools/memory.get",
+      "method": "POST",
+      "input_schema": {
+        "type": "object",
+        "required": ["tenant_id", "memory_id"],
+        "properties": {
+          "tenant_id": { "type": "string" },
+          "memory_id": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "memory.link",
+      "description": "Create a relationship between two memory entries (supports, derived_from, duplicates, supersedes, related).",
+      "endpoint": "/tools/memory.link",
+      "method": "POST",
+      "input_schema": {
+        "type": "object",
+        "required": ["tenant_id", "from_memory_id", "to_memory_id", "relation"],
+        "properties": {
+          "tenant_id": { "type": "string" },
+          "from_memory_id": { "type": "string" },
+          "to_memory_id": { "type": "string" },
+          "relation": {
+            "type": "string",
+            "enum": ["supports", "derived_from", "duplicates", "supersedes", "related"]
+          }
+        }
+      }
+    },
+    {
+      "name": "memory.summarize_scope",
+      "description": "Create a durable summary of recent memory entries in a scope, linked to source items.",
+      "endpoint": "/tools/memory.summarize_scope",
+      "method": "POST",
+      "input_schema": {
+        "type": "object",
+        "required": ["tenant_id", "scope"],
+        "properties": {
+          "tenant_id": { "type": "string" },
+          "scope": {
+            "type": "object",
+            "properties": {
+              "channel_id": { "type": "string" },
+              "conversation_id": { "type": "string" },
+              "project_id": { "type": "string" },
+              "task_id": { "type": "string" }
+            }
+          },
+          "mode": { "type": "string", "enum": ["brief", "full"], "default": "brief" },
+          "max_entries": { "type": "integer", "default": 50, "minimum": 1, "maximum": 500 }
+        }
+      }
+    },
+    {
+      "name": "memory.attach_blob",
+      "description": "Upload an attachment to blob store (bellie-blobnlie) and link it to a memory entry.",
+      "endpoint": "/tools/memory.attach_blob",
+      "method": "POST",
+      "input_schema": {
+        "type": "object",
+        "required": ["tenant_id", "memory_id", "filename", "mime_type", "data_base64"],
+        "properties": {
+          "tenant_id": { "type": "string" },
+          "memory_id": { "type": "string" },
+          "filename": { "type": "string" },
+          "mime_type": { "type": "string" },
+          "data_base64": { "type": "string", "description": "Base64-encoded file content" }
+        }
+      }
+    },
+    {
+      "name": "memory.fetch_blob",
+      "description": "Retrieve an attachment by ID. Returns metadata + download URL (S3) or base64 data (local).",
+      "endpoint": "/tools/memory.fetch_blob",
+      "method": "POST",
+      "input_schema": {
+        "type": "object",
+        "required": ["tenant_id", "attachment_id"],
+        "properties": {
+          "tenant_id": { "type": "string" },
+          "attachment_id": { "type": "string" }
+        }
+      }
+    }
+  ]
+}

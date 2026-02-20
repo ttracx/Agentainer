@@ -28,3 +28,46 @@ jobs:
       - name: Teardown
         if: always()
         run: docker compose down
+
+  test-mcp-memory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start MCP Memory backing services
+        working-directory: services/mcp-memory
+        run: docker compose up -d postgres redis
+
+      - name: Wait for services
+        run: |
+          for i in $(seq 1 30); do
+            docker exec mcp-memory-postgres pg_isready -U memuser -d memorydb && break
+            sleep 1
+          done
+          docker exec mcp-memory-redis redis-cli ping
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        working-directory: services/mcp-memory
+        run: pip install -r requirements-test.txt
+
+      - name: Run MCP Memory Server tests
+        working-directory: services/mcp-memory
+        env:
+          PG_DSN: postgresql://memuser:mempass@localhost:5433/memorydb
+          REDIS_URL: redis://localhost:6380/0
+          EMBED_PROVIDER: stub
+          EMBED_DIM: "1536"
+          BLOB_ENDPOINT_URL: ""
+          MIGRATIONS_DIR: ./migrations
+        run: pytest tests/ -v --tb=short
+
+      - name: Teardown
+        if: always()
+        working-directory: services/mcp-memory
+        run: docker compose down
