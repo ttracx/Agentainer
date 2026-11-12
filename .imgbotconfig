@@ -1,5 +1,6 @@
 {
-  "exclusions": [
-    ".agentainer/**"
+  "ignoredFiles": [
+    ".agentainer/**",
+    "**/.agentainer/**"
   ]
 }
